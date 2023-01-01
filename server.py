@@ -75,5 +75,5 @@ def listen():
         return "ok"
 
 if __name__ == '__main__':
-    context = ('server.crt', 'server.key')  
-    app.run(port=8080, debug=True, ssl_context=context)
+    # context = ('server.crt', 'server.key')  
+    app.run(port=8080, debug=True)
