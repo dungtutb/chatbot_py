@@ -9,6 +9,7 @@ FB_API_URL = os.getenv("FB_API_URL")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 
+ASSETS_DIR = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__)
 
 def send_message(recipient_id, text):
@@ -72,3 +73,7 @@ def listen():
                 respond(sender_id, text)
 
         return "ok"
+
+if __name__ == '__main__':
+    context = ('server.crt', 'server.key')  
+    app.run(host='0.0.0.0',port=5000, debug=True, ssl_context=context)
