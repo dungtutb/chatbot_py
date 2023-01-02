@@ -56,7 +56,7 @@ def is_user_message(message):
     )
 
 
-@app.route("/webhook")
+@app.route("/webhook",methods=["GET", "POST"])
 def listen():
     """This is the main function flask uses to
     listen at the `/webhook` endpoint"""
