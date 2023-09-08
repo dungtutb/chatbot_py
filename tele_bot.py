@@ -100,8 +100,8 @@ def process_date(t):
     global TIME_ZONE
     local = pytz.timezone(TIME_ZONE)
     naive = datetime.fromtimestamp(t / 1000.0)
-    print(naive)
     local_dt = local.localize(naive)
+    print(t, naive, local_dt)
     return local_dt.strftime("%d/%m/%Y %H:%M:%S")
 
 
