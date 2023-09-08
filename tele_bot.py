@@ -3,6 +3,7 @@ import json
 import os
 from datetime import datetime
 
+import pytz
 import requests
 from dotenv import load_dotenv
 from telebot.async_telebot import AsyncTeleBot
@@ -21,6 +22,8 @@ else:
 # CHATS = {749794702: {"id": 749794702, "notify": True}}
 CHATS = {}
 TIME_SLEEP = 1
+
+TIME_ZONE = "Asia/Ho_Chi_Minh"
 
 
 def get_headers(token):
@@ -94,7 +97,11 @@ async def get_status(message):
 
 
 def process_date(t):
-    return datetime.fromtimestamp(t / 1000.0).strftime("%d/%m/%Y %H:%M:%S")
+    global TIME_ZONE
+    local = pytz.timezone(TIME_ZONE)
+    naive = datetime.fromtimestamp(t / 1000.0)
+    local_dt = local.localize(naive)
+    return local_dt.strftime("%d/%m/%Y %H:%M:%S")
 
 
 async def reply_message(bot, message, result):
