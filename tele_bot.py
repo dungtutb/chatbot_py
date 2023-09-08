@@ -198,7 +198,7 @@ async def update_new_items(notify=True):
                     LAST_ITEM_ID = item["orderId"]
                     with open(LAST_ITEM_FILE, "w") as f:
                         f.write(LAST_ITEM_ID)
-                    for v in CHATS.value():
+                    for v in CHATS.values():
                         if v["notify"]:
                             await send_message(
                                 bot,
