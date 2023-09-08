@@ -99,10 +99,8 @@ async def get_status(message):
 def process_date(t):
     global TIME_ZONE
     local = pytz.timezone(TIME_ZONE)
-    naive = datetime.fromtimestamp(t / 1000.0)
-    local_dt = local.localize(naive)
-    print(t, naive, local_dt)
-    return local_dt.strftime("%d/%m/%Y %H:%M:%S")
+    naive = datetime.fromtimestamp(t / 1000.0, local)
+    return naive.strftime("%d/%m/%Y %H:%M:%S")
 
 
 async def reply_message(bot, message, result):
