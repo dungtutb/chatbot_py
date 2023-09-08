@@ -4,7 +4,10 @@ import os
 from datetime import datetime
 
 import requests
+from dotenv import load_dotenv
 from telebot.async_telebot import AsyncTeleBot
+
+load_dotenv()
 
 url = 'https://tizi.asia/core-api/orders?payload={"limit":10,"offset":0,"search":"","orders":{"createdTime":"desc"},"filters":[{"key":"marketId","operator":"equal_to","value":"60e71dc1563671002b121783"}],"extraParams":{},"orderBy":"createdTime","orderType":"desc"}&offset=0&limit=50&orderBy=createdTime&orderType=desc'
 TIZI_TOKEN = None
