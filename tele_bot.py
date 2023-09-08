@@ -10,8 +10,11 @@ url = 'https://tizi.asia/core-api/orders?payload={"limit":10,"offset":0,"search"
 TIZI_TOKEN = None
 LIST_ITEM = {}
 LAST_ITEM_FILE = "last_item.txt"
-with open(LAST_ITEM_FILE, "r") as f:
-    LAST_ITEM_ID = f.read().strip()
+if os.path.exists(LAST_ITEM_FILE):
+    with open(LAST_ITEM_FILE, "r") as f:
+        LAST_ITEM_ID = f.read().strip()
+else:
+    LAST_ITEM_ID = ""
 # CHATS = {749794702: {"id": 749794702, "notify": True}}
 CHATS = {}
 TIME_SLEEP = 1
