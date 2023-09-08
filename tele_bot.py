@@ -19,7 +19,7 @@ if os.path.exists(LAST_ITEM_FILE):
         LAST_ITEM_ID = f.read().strip()
 else:
     LAST_ITEM_ID = ""
-# CHATS = {749794702: {"id": 749794702, "notify": True}}
+CHATS = {5496851372: {"id": 5496851372, "notify": True}}
 CHATS = {}
 TIME_SLEEP = 1
 
