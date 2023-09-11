@@ -120,11 +120,14 @@ async def send_message(bot, chat_id, result):
 
 
 def get_request():
-    response = requests.request("GET", url, headers=get_headers(TIZI_TOKEN))
-    if response.ok:
-        return True, response.json()
-    else:
-        return False, response.text
+    try:
+        response = requests.request("GET", url, headers=get_headers(TIZI_TOKEN))
+        if response.ok:
+            return True, response.json()
+        else:
+            return False, response.text
+    except Exception as e:
+        return False, str(e)
 
 
 def get_result_item(item):
