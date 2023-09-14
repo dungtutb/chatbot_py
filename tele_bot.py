@@ -489,7 +489,7 @@ async def update_new_items(market, notify=True):
                                 bot,
                                 v["id"],
                                 "###########  Đơn hàng mới  ###########\n "
-                                + get_result_item(item),
+                                + get_result_item(item, market),
                             )
 
 
