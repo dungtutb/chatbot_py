@@ -1,7 +1,7 @@
 import asyncio
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 
 import pytz
 import requests
@@ -17,22 +17,26 @@ MARKETS = {
     PHILIPPIN_MARKET: {
         "marketId": "60e71dc1563671002b121783",
         "title": "Đơn hàng thị trường: Phi\n",
+        "last_item_file": "last_item_phi.txt",
+        "last_item_id": "",
     },
     MALAYSIA_MARKET: {
         "marketId": "60e71da9563671002b12177f",
         "title": "Đơn hàng thị trường: Malay\n",
+        "last_item_file": "last_item_malay.txt",
+        "last_item_id": "",
     },
 }
 MYID = "633e83202837f9a4282e44ab"
 
 TIZI_TOKEN = None
 LIST_ITEM = {}
-LAST_ITEM_FILE = "last_item.txt"
-if os.path.exists(LAST_ITEM_FILE):
-    with open(LAST_ITEM_FILE, "r") as f:
-        LAST_ITEM_ID = f.read().strip()
-else:
-    LAST_ITEM_ID = ""
+
+for market in MARKETS.values():
+    if os.path.exists(market["last_item_file"]):
+        with open(market["last_item_file"], "r") as f:
+            market["last_item_id"] = f.read().strip()
+
 # CHATS = {5496851372: {"id": 5496851372, "notify": True}}
 CHATS = {}
 TIME_SLEEP = 60
@@ -69,11 +73,6 @@ def get_token():
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 bot = AsyncTeleBot(BOT_TOKEN)
-
-
-@bot.message_handler(commands=["start", "hello"])
-async def send_welcome(message):
-    await bot.reply_to(message, "Howdy, how are you doing?")
 
 
 @bot.message_handler(commands=["id"])
@@ -156,7 +155,6 @@ def get_statistic(day: datetime):
     startDate = int(
         day.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
     )
-    day.replace(hour=23, minute=59, second=59)
     endDate = int(
         day.replace(hour=23, minute=59, second=59, microsecond=999999).timestamp()
         * 1000
@@ -304,6 +302,7 @@ def get_statistic(day: datetime):
 
 
 def get_items_by_market(market, limit):
+    global MARKETS
     payload = {
         "limit": limit,
         "offset": 0,
@@ -335,8 +334,13 @@ def get_result_item(item, market):
     result += "Ngày hủy: {} \n".format(
         process_date(item["hTime"]) if item["status"] else ""
     )
-    result += "Tên sản phẩm: {} \n".format(item["productCombo"]["name"])
-    result += "Tổng giá: {} \n".format(item["productCombo"]["localPrice"])
+    result += "Tên sản phẩm: {} \n".format(
+        item["productCombo"]["name"] if item["productCombo"] else ""
+    )
+    result += "Tên mkt: {} \n".format(item["orderRequest"]["combo"])
+    result += "Tổng giá: {} \n".format(
+        item["productCombo"]["localPrice"] if item["productCombo"] else 0
+    )
     result += "Trạng thái: {} \n".format("Hủy" if item["status"] else "")
     result += "TT hủy đơn: {} \n".format(item["invalidStatus"])
     result += "TT hủy đơn trùng: {} \n".format(item["customerRefusedStatus"])
@@ -351,48 +355,116 @@ def get_result_item(item, market):
     return result
 
 
-@bot.message_handler(commands=["phi"])
-async def get_phi(message):
-    status, items = get_items_by_market(PHILIPPIN_MARKET, 5)
+async def get_market(message, market):
+    status, items = get_items_by_market(market, 5)
     if status is False:
         get_token()
-        status, items = get_items_by_market(PHILIPPIN_MARKET, 5)
+        status, items = get_items_by_market(market, 5)
 
     if status:
         if items and isinstance(items["items"], list):
             items["items"].reverse()
-            for item in items["items"]:
+            for item in items["items"][-5:]:
                 await reply_message(
                     bot,
                     message,
-                    get_result_item(item, PHILIPPIN_MARKET),
+                    get_result_item(item, market),
                 )
         else:
             await reply_message(bot, message, "Item is not list\n")
     else:
         await reply_message(bot, message, items[:300] + "\n")
+
+
+async def stat_by_date(message, market, day):
+    status, items = get_items_by_market(market, 50)
+    if status is False:
+        get_token()
+        status, items = get_items_by_market(market, 50)
+
+    start_day_timestamp = int(
+        day.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
+    )
+
+    end_day_timestamp = int(
+        day.replace(hour=23, minute=59, second=59, microsecond=999999).timestamp()
+        * 1000
+    )
+
+    item_stats = {}
+
+    others = []
+
+    if status:
+        if items and isinstance(items["items"], list):
+            items["items"].reverse()
+
+            for item in items["items"]:
+                if (
+                    item["createdTime"] >= start_day_timestamp
+                    and item["createdTime"] <= end_day_timestamp
+                ):
+                    if item["orderRequest"]["utm_medium"]:
+                        if item["orderRequest"]["utm_medium"] in item_stats:
+                            item_stats[item["orderRequest"]["utm_medium"]] += 1
+                        else:
+                            item_stats[item["orderRequest"]["utm_medium"]] = 1
+                    else:
+                        others.append(
+                            {
+                                "name": item["orderRequest"]["combo"],
+                                "time": process_date(item["createdTime"]),
+                            }
+                        )
+
+            result = "Thống kê số đơn theo ads thị trường {} ngày {}\n".format(
+                market, day.strftime("%d/%m/%Y")
+            )
+            utms = sorted(item_stats.keys())
+            for utm in utms:
+                result += "=> {} = {}\n".format(utm, item_stats[utm])
+            result += "=> {} = {}\n".format("Không xác định", len(others))
+
+            if len(others) > 0:
+                for item in others:
+                    result += "        - {} | {}\n".format(item["name"], item["time"])
+
+            await reply_message(
+                bot,
+                message,
+                result,
+            )
+        else:
+            await reply_message(bot, message, "Item is not list\n")
+    else:
+        await reply_message(bot, message, items[:300] + "\n")
+
+
+@bot.message_handler(commands=["phi"])
+async def get_phi(message):
+    await get_market(message, "phi")
 
 
 @bot.message_handler(commands=["malay"])
 async def get_malay(message):
-    status, items = get_items_by_market(MALAYSIA_MARKET, 5)
-    if status is False:
-        get_token()
-        status, items = get_items_by_market(MALAYSIA_MARKET, 5)
+    await get_market(message, "malay")
 
-    if status:
-        if items and isinstance(items["items"], list):
-            items["items"].reverse()
-            for item in items["items"]:
-                await reply_message(
-                    bot,
-                    message,
-                    get_result_item(item, MALAYSIA_MARKET),
-                )
-        else:
-            await reply_message(bot, message, "Item is not list\n")
-    else:
-        await reply_message(bot, message, items[:300] + "\n")
+
+@bot.message_handler(commands=["t"])
+async def get_today(message):
+    local = pytz.timezone(TIME_ZONE)
+    now = datetime.now(local)
+    await stat_by_date(message, PHILIPPIN_MARKET, now)
+    await stat_by_date(message, MALAYSIA_MARKET, now)
+
+
+@bot.message_handler(commands=["y"])
+async def get_yesterday(message):
+    local = pytz.timezone(TIME_ZONE)
+    now = datetime.now(local)
+    yesterday = now - timedelta(1)
+    await stat_by_date(message, PHILIPPIN_MARKET, yesterday)
+    await stat_by_date(message, MALAYSIA_MARKET, yesterday)
 
 
 @bot.message_handler(commands=["s"])
@@ -430,9 +502,7 @@ async def statistic(message):
 
             users = sorted(users.values(), key=lambda d: d["revenue"], reverse=True)
 
-            result = "Bảng xếp hạng MKT ngày {}\n".format(
-                now.strftime("%d/%m/%Y %H:%M:%S")
-            )
+            result = "Bảng xếp hạng MKT ngày {}\n".format(now.strftime("%d/%m/%Y"))
             for count, p in enumerate(users):
                 if p["count"] > 0:
                     result += "<{}> {}\n ==> Tổng đơn: {} | Tổng tiền {}\n".format(
@@ -452,37 +522,40 @@ async def statistic(message):
         await reply_message(bot, message, "ERROR\n")
 
 
-@bot.message_handler(commands=["start", "hello"])
+@bot.message_handler(commands=["start", "help"])
 async def send_welcome(message):
-    bot.reply_to(message, "Howdy, how are you doing?")
-
-
-@bot.message_handler(func=lambda msg: True)
-async def echo_all(message):
-    global LAST_ITEM_ID
-    await reply_message(bot, message, LAST_ITEM_ID)
-
-
-@bot.message_handler(commands=["last"])
-async def lst_order(message):
-    await bot.reply_to(message, "Turned off notification!\n")
+    await bot.reply_to(
+        message,
+        """
+/start, /help  : Xem danh sách tính năng bot cung cấp
+/on     : Bật tự động thông báo khi có đơn hàng mới
+/off    : Tắt tự động thông báo khi có đơn hàng mới
+/status : Xem trạng thái bật tắt tự động thông báo
+/s      : Thống kê doanh số trong ngày
+/t      : Thống kê số đơn theo ads hôm nay
+/y      : Thống kê số đơn theo ads hôm qua             
+/phi    : Xem 5 đơn hàng gần nhất thị trường Philippin
+/malay  : Xem 5 đơn hàng gần nhất thị trường Malaysia
+/id     : Lấy ID người dùng Telegram
+""",
+    )
 
 
 # bot.infinity_polling()
 
 
 async def update_new_items(market, notify=True):
-    global LIST_ITEM, CHATS, LAST_ITEM_ID
+    global LIST_ITEM, CHATS, MARKETS
     status, items = get_items_by_market(market, 10)
     if status:
         if items and isinstance(items["items"], list):
             items["items"].reverse()
             for item in items["items"]:
                 # LIST_ITEM[item["orderId"]] = item
-                if item["orderId"] > LAST_ITEM_ID:
-                    LAST_ITEM_ID = item["orderId"]
-                    with open(LAST_ITEM_FILE, "w") as f:
-                        f.write(LAST_ITEM_ID)
+                if item["orderId"] > MARKETS[market]["last_item_id"]:
+                    MARKETS[market]["last_item_id"] = item["orderId"]
+                    with open(MARKETS[market]["last_item_file"], "w") as f:
+                        f.write(MARKETS[market]["last_item_id"])
                     for v in CHATS.values():
                         if v["notify"]:
                             await send_message(
