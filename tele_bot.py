@@ -405,15 +405,25 @@ async def stat_by_date(message, market, day):
                     and item["createdTime"] <= end_day_timestamp
                 ):
                     if item["orderRequest"]["utm_medium"]:
-                        if item["orderRequest"]["utm_medium"] in item_stats:
-                            item_stats[item["orderRequest"]["utm_medium"]] += 1
+                        if item["orderRequest"]["utm_medium"] not in item_stats:
+                            item_stats[item["orderRequest"]["utm_medium"]] = {
+                                "active": 0,
+                                "singleton": 0,
+                            }
+                        if item["status"]:
+                            item_stats[item["orderRequest"]["utm_medium"]][
+                                "singleton"
+                            ] += 1
                         else:
-                            item_stats[item["orderRequest"]["utm_medium"]] = 1
+                            item_stats[item["orderRequest"]["utm_medium"]][
+                                "active"
+                            ] += 1
                     else:
                         others.append(
                             {
                                 "name": item["orderRequest"]["combo"],
                                 "time": process_date(item["createdTime"]),
+                                "status": item["status"],
                             }
                         )
 
@@ -422,12 +432,18 @@ async def stat_by_date(message, market, day):
             )
             utms = sorted(item_stats.keys())
             for utm in utms:
-                result += "=> {} = {}\n".format(utm, item_stats[utm])
+                result += "=> {} |====| Đơn sống: {} | Đơn trùng: {}\n".format(
+                    utm, item_stats[utm]["active"], item_stats[utm]["singleton"]
+                )
             result += "=> {} = {}\n".format("Không xác định", len(others))
 
             if len(others) > 0:
                 for item in others:
-                    result += "        - {} | {}\n".format(item["name"], item["time"])
+                    result += "        - {} | {} {}\n".format(
+                        item["name"],
+                        item["time"],
+                        "| Trạng thái: HỦY" if item["status"] else "",
+                    )
 
             await reply_message(
                 bot,
