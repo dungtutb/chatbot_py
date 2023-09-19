@@ -456,6 +456,70 @@ async def stat_by_date(message, market, day):
         await reply_message(bot, message, items[:300] + "\n")
 
 
+def extract_arg(arg):
+    return arg.split(" ", 1)[1:]
+
+
+async def get_search(message, market, day):
+    text_search = extract_arg(message.text)
+    if len(text_search) == 0:
+        await reply_message(bot, message, "Thiếu từ khóa tìm kiếm\n")
+        return
+    else:
+        text_search = text_search[0].strip().lower()
+    status, items = get_items_by_market(market, 50)
+    if status is False:
+        get_token()
+        status, items = get_items_by_market(market, 50)
+
+    start_day_timestamp = int(
+        day.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
+    )
+
+    end_day_timestamp = int(
+        day.replace(hour=23, minute=59, second=59, microsecond=999999).timestamp()
+        * 1000
+    )
+
+    item_stats = []
+
+    if status:
+        if items and isinstance(items["items"], list):
+            items["items"].reverse()
+
+            for item in items["items"]:
+                if (
+                    item["createdTime"] >= start_day_timestamp
+                    and item["createdTime"] <= end_day_timestamp
+                ):
+                    if (
+                        item["orderRequest"]["utm_medium"]
+                        and text_search in item["orderRequest"]["utm_medium"].lower()
+                    ):
+                        item_stats.append(item)
+
+            await reply_message(
+                bot,
+                message,
+                'Có {} đơn hàng thị trường {} khớp với từ khóa "{}" ngày {}\n'.format(
+                    len(item_stats),
+                    market.upper(),
+                    text_search,
+                    day.strftime("%d/%m/%Y"),
+                ),
+            )
+            for item in item_stats:
+                await reply_message(
+                    bot,
+                    message,
+                    get_result_item(item, market),
+                )
+        else:
+            await reply_message(bot, message, "Item is not list\n")
+    else:
+        await reply_message(bot, message, items[:300] + "\n")
+
+
 @bot.message_handler(commands=["phi"])
 async def get_phi(message):
     await get_market(message, "phi")
@@ -555,6 +619,15 @@ async def send_welcome(message):
 /id     : Lấy ID người dùng Telegram
 """,
     )
+
+
+@bot.message_handler(commands=["search"])
+async def search(message):
+    local = pytz.timezone(TIME_ZONE)
+    now = datetime.now(local)
+
+    await get_search(message, PHILIPPIN_MARKET, now)
+    await get_search(message, MALAYSIA_MARKET, now)
 
 
 # bot.infinity_polling()
