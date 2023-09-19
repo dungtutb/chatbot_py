@@ -611,6 +611,7 @@ async def send_welcome(message):
 /on     : Bật tự động thông báo khi có đơn hàng mới
 /off    : Tắt tự động thông báo khi có đơn hàng mới
 /status : Xem trạng thái bật tắt tự động thông báo
+/search [chuỗi tìm kiếm] : Tìm những đơn hàng trong ngày khớp với chuỗi tìm kiếm 
 /s      : Thống kê doanh số trong ngày
 /t      : Thống kê số đơn theo ads hôm nay
 /y      : Thống kê số đơn theo ads hôm qua             
