@@ -39,7 +39,7 @@ for market in MARKETS.values():
 
 # CHATS = {5496851372: {"id": 5496851372, "notify": True}}
 CHATS = {}
-TIME_SLEEP = 60
+TIME_SLEEP = 180
 
 TIME_ZONE = "Asia/Ho_Chi_Minh"
 
@@ -136,7 +136,8 @@ def get_request(url):
         else:
             return False, response.text
     except Exception as e:
-        return False, str(e)
+        print(e)
+        return False, "Exception occurred {}".format(url)
 
 
 def get_list_user():
