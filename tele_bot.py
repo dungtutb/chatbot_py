@@ -37,8 +37,16 @@ for market in MARKETS.values():
         with open(market["last_item_file"], "r") as f:
             market["last_item_id"] = f.read().strip()
 
+FILE_CHAT_ID = "chat_id.txt"
 # CHATS = {5496851372: {"id": 5496851372, "notify": True}}
 CHATS = {}
+
+if os.path.exists(FILE_CHAT_ID):
+    with open(FILE_CHAT_ID, "r") as f:
+        chat_ids = [int(id) for id in f.read().strip().split(",")]
+        for id in chat_ids:
+            CHATS[id] = {"id": id, "notify": True}
+
 TIME_SLEEP = 180
 
 TIME_ZONE = "Asia/Ho_Chi_Minh"
@@ -81,10 +89,16 @@ async def my_id(message):
     await bot.reply_to(message, str(message.from_user.id))
 
 
+async def update_file_chat_id():
+    with open(FILE_CHAT_ID, "w") as f:
+        f.write(",".join([str(id) for id in CHATS.keys()]))
+
+
 @bot.message_handler(commands=["on"])
 async def turn_on_auto(message):
     if message.chat.id not in CHATS:
         CHATS[message.chat.id] = {"id": message.chat.id, "notify": True}
+        await update_file_chat_id()
     else:
         CHATS[message.chat.id]["notify"] = True
     await bot.reply_to(message, "Turned on notification automatically!\n")
@@ -136,6 +150,7 @@ def get_request(url):
         else:
             return False, response.text
     except Exception as e:
+        print("!!! Exception occurred {}".format(url))
         print(e)
         return False, "Exception occurred {}".format(url)
 
