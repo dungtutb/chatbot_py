@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import random
 from datetime import datetime, timedelta
 
 import pytz
@@ -46,6 +47,25 @@ if os.path.exists(FILE_CHAT_ID):
         chat_ids = [int(id) for id in f.read().strip().split(",")]
         for id in chat_ids:
             CHATS[id] = {"id": id, "notify": True}
+
+EMOJIS = {}
+FILE_EMOJI = "asciimoji.txt"
+if os.path.exists(FILE_EMOJI):
+    with open("asciimoji.txt", "r", encoding="utf8") as f:
+        EMOJIS = f.readlines()
+        EMOJIS = dict([e.strip().split(" ", 1) for e in EMOJIS])
+
+
+def get_emoji():
+    global EMOJIS
+    if EMOJIS:
+        word, emoji = random.choice(list(EMOJIS.items()))
+        return emoji
+        # return "{} ({})".format(emoji, word)
+
+    # return "{} ({})".format("＼(＾O＾)／", "woo")
+    return "＼(＾O＾)／"
+
 
 TIME_SLEEP = 180
 
@@ -647,9 +667,6 @@ async def search(message):
     await get_search(message, MALAYSIA_MARKET, now)
 
 
-# bot.infinity_polling()
-
-
 async def update_new_items(market, notify=True):
     global LIST_ITEM, CHATS, MARKETS
     status, items = get_items_by_market(market, 10)
@@ -667,7 +684,12 @@ async def update_new_items(market, notify=True):
                             await send_message(
                                 bot,
                                 v["id"],
-                                "###########  Đơn hàng mới  ###########\n "
+                                "##### Ồ, có đơn {} #####\n{}".format(
+                                    get_emoji(),
+                                    "(-_-) Cơ mà trùng mất rồi\n"
+                                    if item["customerRefusedStatus"]
+                                    else "",
+                                )
                                 + get_result_item(item, market),
                             )
 
