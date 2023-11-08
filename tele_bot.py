@@ -67,7 +67,9 @@ def get_emoji():
     return "＼(＾O＾)／"
 
 
-TIME_SLEEP = 180
+os.makedirs(os.path.dirname("logs/"), exist_ok=True)
+
+TIME_SLEEP = int(os.environ.get("TIME_SLEEP", 180))
 
 TIME_ZONE = "Asia/Ho_Chi_Minh"
 
@@ -157,11 +159,9 @@ async def reply_message(bot, message, result):
 async def send_message(bot, chat_id, result):
     if len(result) > 4095:
         for x in range(0, len(result), 4095):
-            await bot.send_message(
-                chat_id, text=result[x : x + 4095], disable_notification=True
-            )
+            await bot.send_message(chat_id, text=result[x : x + 4095])
     else:
-        await bot.send_message(chat_id, text=result, disable_notification=True)
+        await bot.send_message(chat_id, text=result)
 
 
 def get_request(url):
@@ -585,8 +585,7 @@ async def get_yesterday(message):
     await stat_by_date(message, MALAYSIA_MARKET, yesterday)
 
 
-@bot.message_handler(commands=["s"])
-async def statistic(message):
+async def process_statistic(message=None):
     local = pytz.timezone(TIME_ZONE)
     now = datetime.now(local)
 
@@ -629,15 +628,37 @@ async def statistic(message):
                         p["count"],
                         "{:,.0f}".format(round(p["revenue"])),
                     )
-            await reply_message(
-                bot,
-                message,
-                result,
-            )
+
+                    file_name = "logs/{}/{}.txt".format(
+                        now.strftime("%Y-%m-%d"), p["_id"]
+                    )
+                    os.makedirs(os.path.dirname(file_name), exist_ok=True)
+                    with open(file_name, "a") as stat_f:
+                        stat_f.write(
+                            "{} {} {}\n".format(
+                                now.strftime("%H:%M:%S"),
+                                p["count"],
+                                p["revenue"],
+                            )
+                        )
+
+            if message:
+                await reply_message(
+                    bot,
+                    message,
+                    result,
+                )
         else:
-            await reply_message(bot, message, "Item is not list\n")
+            if message:
+                await reply_message(bot, message, "Item is not list\n")
     else:
-        await reply_message(bot, message, "ERROR\n")
+        if message:
+            await reply_message(bot, message, "ERROR\n")
+
+
+@bot.message_handler(commands=["s"])
+async def statistic(message):
+    await process_statistic(message=message)
 
 
 @bot.message_handler(commands=["start", "help"])
@@ -702,6 +723,8 @@ async def periodic():
         await update_new_items(PHILIPPIN_MARKET, True)
         await asyncio.sleep(10)
         await update_new_items(MALAYSIA_MARKET, True)
+        await asyncio.sleep(10)
+        await process_statistic(message=None)
         await asyncio.sleep(TIME_SLEEP)
 
 
