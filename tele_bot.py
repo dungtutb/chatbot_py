@@ -157,9 +157,11 @@ async def reply_message(bot, message, result):
 async def send_message(bot, chat_id, result):
     if len(result) > 4095:
         for x in range(0, len(result), 4095):
-            await bot.send_message(chat_id, text=result[x : x + 4095])
+            await bot.send_message(
+                chat_id, text=result[x : x + 4095], disable_notification=True
+            )
     else:
-        await bot.send_message(chat_id, text=result)
+        await bot.send_message(chat_id, text=result, disable_notification=True)
 
 
 def get_request(url):
