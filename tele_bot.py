@@ -766,7 +766,10 @@ async def draw_process(message, now, users):
             item["times"],
             item["counts"],
             label="{} - {} | {} | {}".format(
-                i + 1, item["name"], item["count"], item["revenue"]
+                i + 1,
+                item["name"],
+                item["count"],
+                "{:,.0f}".format(round(item["revenue"])),
             ),
         )
         les.append(le)
