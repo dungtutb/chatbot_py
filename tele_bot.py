@@ -4,6 +4,7 @@ import os
 import random
 from datetime import datetime, timedelta
 
+import matplotlib.pyplot as plt
 import pytz
 import requests
 from dotenv import load_dotenv
@@ -108,7 +109,11 @@ bot = AsyncTeleBot(BOT_TOKEN)
 @bot.message_handler(commands=["id"])
 async def my_id(message):
     print(message.from_user.id)
-    await bot.reply_to(message, str(message.from_user.id))
+    try:
+        await bot.reply_to(message, str(message.from_user.id))
+    except Exception as e:
+        print("!!! Exception occurred")
+        print(e)
 
 
 async def update_file_chat_id():
@@ -123,22 +128,34 @@ async def turn_on_auto(message):
         await update_file_chat_id()
     else:
         CHATS[message.chat.id]["notify"] = True
-    await bot.reply_to(message, "Turned on notification automatically!\n")
+    try:
+        await bot.reply_to(message, "Turned on notification automatically!\n")
+    except Exception as e:
+        print("!!! Exception occurred")
+        print(e)
 
 
 @bot.message_handler(commands=["off"])
 async def turn_off_auto(message):
     if message.chat.id in CHATS:
         CHATS[message.chat.id]["notify"] = False
-    await bot.reply_to(message, "Turned off notification!\n")
+    try:
+        await bot.reply_to(message, "Turned off notification!\n")
+    except Exception as e:
+        print("!!! Exception occurred")
+        print(e)
 
 
 @bot.message_handler(commands=["status"])
 async def get_status(message):
-    await bot.reply_to(
-        message,
-        "Notification: {}\n".format("On" if message.chat.id in CHATS else "Off"),
-    )
+    try:
+        await bot.reply_to(
+            message,
+            "Notification: {}\n".format("On" if message.chat.id in CHATS else "Off"),
+        )
+    except Exception as e:
+        print("!!! Exception occurred")
+        print(e)
 
 
 def process_date(t):
@@ -149,19 +166,27 @@ def process_date(t):
 
 
 async def reply_message(bot, message, result):
-    if len(result) > 4095:
-        for x in range(0, len(result), 4095):
-            await bot.reply_to(message, text=result[x : x + 4095])
-    else:
-        await bot.reply_to(message, text=result)
+    try:
+        if len(result) > 4095:
+            for x in range(0, len(result), 4095):
+                await bot.reply_to(message, text=result[x : x + 4095])
+        else:
+            await bot.reply_to(message, text=result)
+    except Exception as e:
+        print("!!! Exception occurred")
+        print(e)
 
 
 async def send_message(bot, chat_id, result):
-    if len(result) > 4095:
-        for x in range(0, len(result), 4095):
-            await bot.send_message(chat_id, text=result[x : x + 4095])
-    else:
-        await bot.send_message(chat_id, text=result)
+    try:
+        if len(result) > 4095:
+            for x in range(0, len(result), 4095):
+                await bot.send_message(chat_id, text=result[x : x + 4095])
+        else:
+            await bot.send_message(chat_id, text=result)
+    except Exception as e:
+        print("!!! Exception occurred")
+        print(e)
 
 
 def get_request(url):
@@ -663,9 +688,10 @@ async def statistic(message):
 
 @bot.message_handler(commands=["start", "help"])
 async def send_welcome(message):
-    await bot.reply_to(
-        message,
-        """
+    try:
+        await bot.reply_to(
+            message,
+            """
 /start, /help  : Xem danh sách tính năng bot cung cấp
 /on     : Bật tự động thông báo khi có đơn hàng mới
 /off    : Tắt tự động thông báo khi có đơn hàng mới
@@ -673,12 +699,16 @@ async def send_welcome(message):
 /search [chuỗi tìm kiếm] : Tìm những đơn hàng trong ngày khớp với chuỗi tìm kiếm 
 /s      : Thống kê doanh số trong ngày
 /t      : Thống kê số đơn theo ads hôm nay
-/y      : Thống kê số đơn theo ads hôm qua             
+/y      : Thống kê số đơn theo ads hôm qua
+/d      : Vẽ biểu đồ             
 /phi    : Xem 5 đơn hàng gần nhất thị trường Philippin
 /malay  : Xem 5 đơn hàng gần nhất thị trường Malaysia
 /id     : Lấy ID người dùng Telegram
 """,
-    )
+        )
+    except Exception as e:
+        print("!!! Exception occurred")
+        print(e)
 
 
 @bot.message_handler(commands=["search"])
@@ -688,6 +718,108 @@ async def search(message):
 
     await get_search(message, PHILIPPIN_MARKET, now)
     await get_search(message, MALAYSIA_MARKET, now)
+
+
+async def draw_process(message, now, users):
+    day_str = now.strftime("%Y-%m-%d")
+    # day_str = "2023-11-11"
+    folder = "logs/"
+    FJoin = os.path.join
+
+    path = FJoin(os.path.abspath(folder), day_str)
+
+    fig, ax = plt.subplots(figsize=(12, 10), layout="constrained")
+    les = []
+    data = []
+    for file in os.listdir(path):
+        id = file.strip().split(".")[0]
+        with open(FJoin(path, file)) as f:
+            times = []
+            counts = []
+            revenues = []
+            for line in f.readlines():
+                arr = line.strip().split(" ")
+                if len(arr) == 3:
+                    times.append(
+                        datetime.strptime(
+                            "{} {}".format(day_str, arr[0]), "%Y-%m-%d %H:%M:%S"
+                        )
+                    )
+                    counts.append(int(arr[1]))
+                    revenues.append(float(arr[2]))
+
+        data.append(
+            {
+                "id": id,
+                "name": users[id]["name"].split("-")[0].strip(),
+                "times": times,
+                "counts": counts,
+                "revenues": revenues,
+                "count": max(counts),
+                "revenue": max(revenues),
+            }
+        )
+
+    data = sorted(data, key=lambda x: x["revenue"], reverse=True)
+    for i, item in enumerate(data):
+        (le,) = ax.plot(
+            item["times"],
+            item["counts"],
+            label="{} - {} | {} | {}".format(
+                i + 1, item["name"], item["count"], item["revenue"]
+            ),
+        )
+        les.append(le)
+
+    ax.legend(handles=les)
+
+    # Giving title to the chart using plt.title
+    plt.title("Số đơn theo thời gian")
+
+    # rotating the x-axis tick labels at 30degree
+    # towards right
+    plt.xticks(rotation=30, ha="right")
+
+    # Providing x and y label to the chart
+    plt.xlabel("Date {}".format(day_str))
+    plt.ylabel("Thời gian")
+    plt.savefig("test.png")
+    try:
+        await bot.send_photo(message.chat.id, open("test.png", "rb"))
+    except Exception as e:
+        print("!!! Exception occurred")
+        print(e)
+
+    # bot.clean_tmp_dir()
+
+
+@bot.message_handler(commands=["d"])
+async def draw(message):
+    local = pytz.timezone(TIME_ZONE)
+    now = datetime.now(local)
+
+    status, items = get_list_user()
+    if status is False:
+        get_token()
+        status, items = get_list_user()
+
+    if status:
+        if items and isinstance(items["items"], list):
+            users = {}
+            for user in items["items"]:
+                users[user["_id"]] = {
+                    "_id": user["_id"],
+                    "name": user["name"],
+                    "count": 0,
+                    "revenue": 0,
+                }
+            await draw_process(message, now, users)
+        else:
+            if message:
+                await reply_message(bot, message, "Item is not list\n")
+    else:
+        if message:
+            await reply_message(bot, message, "ERROR\n")
 
 
 async def update_new_items(market, notify=True):
