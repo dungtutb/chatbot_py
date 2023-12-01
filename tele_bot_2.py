@@ -215,9 +215,13 @@ def get_list_user():
 
 
 def get_statistic(day: datetime):
+    month = int(
+        day.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
+    )
     startDate = int(
         day.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
     )
+
     endDate = int(
         day.replace(hour=23, minute=59, second=59, microsecond=999999).timestamp()
         * 1000
@@ -225,9 +229,9 @@ def get_statistic(day: datetime):
 
     payload = {
         "mode": "raw",
-        "month": 1700708909186,
+        "month": month,
         "startDate": startDate,
-        "endDate": endDate,
+        "endDate": None,
         "dxkStartDate": None,
         "dxkEndDate": None,
         "productGroupIds": None,
@@ -526,7 +530,7 @@ async def process_statistic(message=None):
                 name = item[1]["value"]
                 data[name] = {
                     "name": name,
-                    "count": item[6]["value"] if item[6]["value"] else 0,
+                    "count": item[7]["value"] if item[7]["value"] else 0,
                     "revenue": item[2]["value"] if item[2]["value"] else 0,
                 }
 
