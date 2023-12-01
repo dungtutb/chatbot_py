@@ -531,6 +531,7 @@ async def process_statistic(message=None):
                 data[name] = {
                     "name": name,
                     "count": item[7]["value"] if item[7]["value"] else 0,
+                    "mkt_revenue": item[3]["value"] if item[3]["value"] else 0,
                     "revenue": item[2]["value"] if item[2]["value"] else 0,
                 }
 
@@ -539,11 +540,12 @@ async def process_statistic(message=None):
     result = "Bảng xếp hạng MKT ngày {}\n".format(now.strftime("%d/%m/%Y"))
     for count, p in enumerate(data):
         if p["count"] > 0:
-            result += "<{}> {}\n ==> Tổng đơn: {} | Tổng tiền {}\n".format(
+            result += "<{}> {}\n ==> Đơn: {} | DS_HQ {} | DS_MKT {}\n".format(
                 count + 1,
                 p["name"],
                 p["count"],
                 "{:,.0f}".format(round(p["revenue"])),
+                "{:,.0f}".format(round(p["mkt_revenue"])),
             )
 
             file_name = "logs/{}/{}.txt".format(
