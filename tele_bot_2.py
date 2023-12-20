@@ -729,7 +729,7 @@ async def periodic():
 
 
 async def main():
-    await asyncio.gather(bot.polling(), periodic())
+    await asyncio.gather(bot.polling(non_stop=True), periodic())
 
 
 if __name__ == "__main__":
