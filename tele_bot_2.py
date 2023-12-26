@@ -523,25 +523,28 @@ async def process_statistic(message=None):
         get_token()
         status, statistic = get_statistic(now)
 
-    data = {}
+    data = []
     if status:
         if statistic and isinstance(statistic["items"], list):
             for item in statistic["items"][1:]:
                 name = item[1]["value"]
-                data[name] = {
-                    "name": name,
-                    "count": item[7]["value"] if item[7]["value"] else 0,
-                    "hq_revenue": item[2]["value"] if item[2]["value"] else 0,
-                    "revenue": item[3]["value"] if item[3]["value"] else 0,
-                }
+                data.append(
+                    {
+                        "stt": item[0]["value"] if item[0]["value"] else 0,
+                        "name": name,
+                        "count": item[7]["value"] if item[7]["value"] else 0,
+                        "hq_revenue": item[2]["value"] if item[2]["value"] else 0,
+                        "revenue": item[3]["value"] if item[3]["value"] else 0,
+                    }
+                )
 
-    data = sorted(list(data.values()), key=lambda d: d["revenue"], reverse=True)
+    # data = sorted(list(data.values()), key=lambda d: d["revenue"], reverse=True)
 
     result = "Bảng xếp hạng MKT ngày {}\n".format(now.strftime("%d/%m/%Y"))
-    for count, p in enumerate(data):
+    for p in data:
         if p["count"] > 0:
             result += "<{}> {}\n ==> Tổng đơn: {} | Doanh số: {}\n".format(
-                count + 1,
+                p["stt"],
                 p["name"],
                 p["count"],
                 "{:,.0f}".format(round(p["revenue"])),
