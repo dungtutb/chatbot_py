@@ -229,7 +229,7 @@ def get_statistic(day: datetime):
 
     payload = {
         "mode": "raw",
-        "month": month,
+        "month": startDate,
         "startDate": startDate,
         "endDate": None,
         "dxkStartDate": None,
@@ -526,15 +526,27 @@ async def process_statistic(message=None):
     data = []
     if status:
         if statistic and isinstance(statistic["items"], list):
+            count_index = 8
+            revenue_index = 3
+            for cell in statistic["items"][0]["cells"]:
+                if cell["value"] == "Tổng số đơn":
+                    count_index = cell["realIndex"]
+                elif cell["value"] == "DSDK MKT":
+                    revenue_index = cell["realIndex"]
+
             for item in statistic["items"][1:]:
                 name = item[1]["value"]
                 data.append(
                     {
                         "stt": item[0]["value"] if item[0]["value"] else 0,
                         "name": name,
-                        "count": item[7]["value"] if item[7]["value"] else 0,
-                        "hq_revenue": item[2]["value"] if item[2]["value"] else 0,
-                        "revenue": item[3]["value"] if item[3]["value"] else 0,
+                        "count": item[count_index]["value"]
+                        if item[count_index]["value"]
+                        else 0,
+                        # "hq_revenue": item[2]["value"] if item[2]["value"] else 0,
+                        "revenue": item[revenue_index]["value"]
+                        if item[revenue_index]["value"]
+                        else 0,
                     }
                 )
 
