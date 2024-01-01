@@ -535,17 +535,19 @@ async def process_statistic(message=None):
                     revenue_index = cell["realIndex"]
 
             for item in statistic["items"][1:]:
-                name = item[1]["value"]
+                name = item["cells"][1]["value"]
                 data.append(
                     {
-                        "stt": item[0]["value"] if item[0]["value"] else 0,
-                        "name": name,
-                        "count": item[count_index]["value"]
-                        if item[count_index]["value"]
+                        "stt": item["cells"][0]["value"]
+                        if item["cells"][0]["value"]
                         else 0,
-                        # "hq_revenue": item[2]["value"] if item[2]["value"] else 0,
-                        "revenue": item[revenue_index]["value"]
-                        if item[revenue_index]["value"]
+                        "name": name,
+                        "count": item["cells"][count_index]["value"]
+                        if item["cells"][count_index]["value"]
+                        else 0,
+                        # "hq_revenue": item["cells"][2]["value"] if item["cells"][2]["value"] else 0,
+                        "revenue": item["cells"][revenue_index]["value"]
+                        if item["cells"][revenue_index]["value"]
                         else 0,
                     }
                 )
