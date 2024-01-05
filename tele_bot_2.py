@@ -316,8 +316,16 @@ def get_result_item(item, market):
         item["customerMessage"] if "customerMessage" in item else ""
     )
     # result += "Link: {} \n".format(item["orderRequest"]["link"])
-    result += "utm_medium: {} \n".format(item["orderRequest"]["utm_medium"])
-    result += "utm_source: {} \n".format(item["orderRequest"]["utm_source"])
+    result += "utm_medium: {} \n".format(
+        item["orderRequest"]["utm_medium"]
+        if "utm_medium" in item["orderRequest"]
+        else ""
+    )
+    result += "utm_source: {} \n".format(
+        item["orderRequest"]["utm_source"]
+        if "utm_source" in item["orderRequest"]
+        else ""
+    )
 
     return result
 
