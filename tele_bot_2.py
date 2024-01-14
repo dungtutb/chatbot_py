@@ -533,32 +533,34 @@ async def process_statistic(message=None):
 
     data = []
     if status:
-        if statistic and isinstance(statistic["items"], list):
-            count_index = 8
-            revenue_index = 3
-            for cell in statistic["items"][0]["cells"]:
-                if cell["value"] == "Tổng số đơn":
-                    count_index = cell["realIndex"]
-                elif cell["value"] == "DSDK MKT":
-                    revenue_index = cell["realIndex"]
+        if statistic and "tables" in statistic:
+            statistic = statistic["tables"][0]
+            if statistic and isinstance(statistic["items"], list):
+                count_index = 8
+                revenue_index = 3
+                for cell in statistic["items"][0]["cells"]:
+                    if cell["value"] == "Tổng số đơn":
+                        count_index = cell["realIndex"]
+                    elif cell["value"] == "DSDK MKT":
+                        revenue_index = cell["realIndex"]
 
-            for item in statistic["items"][1:]:
-                name = item["cells"][1]["value"]
-                data.append(
-                    {
-                        "stt": item["cells"][0]["value"]
-                        if item["cells"][0]["value"]
-                        else 0,
-                        "name": name,
-                        "count": item["cells"][count_index]["value"]
-                        if item["cells"][count_index]["value"]
-                        else 0,
-                        # "hq_revenue": item["cells"][2]["value"] if item["cells"][2]["value"] else 0,
-                        "revenue": item["cells"][revenue_index]["value"]
-                        if item["cells"][revenue_index]["value"]
-                        else 0,
-                    }
-                )
+                for item in statistic["items"][1:]:
+                    name = item["cells"][1]["value"]
+                    data.append(
+                        {
+                            "stt": item["cells"][0]["value"]
+                            if item["cells"][0]["value"]
+                            else 0,
+                            "name": name,
+                            "count": item["cells"][count_index]["value"]
+                            if item["cells"][count_index]["value"]
+                            else 0,
+                            # "hq_revenue": item["cells"][2]["value"] if item["cells"][2]["value"] else 0,
+                            "revenue": item["cells"][revenue_index]["value"]
+                            if item["cells"][revenue_index]["value"]
+                            else 0,
+                        }
+                    )
 
     # data = sorted(list(data.values()), key=lambda d: d["revenue"], reverse=True)
 
