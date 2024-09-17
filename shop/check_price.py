@@ -109,6 +109,20 @@ async def get_link(message):
         )
 
 
+@bot.message_handler(commands=["r"])
+async def run_once(message):
+    global client_error
+    client_error = False
+    init_client()
+    await job()
+    if message:
+        await reply_message(
+            bot,
+            message,
+            "Done",
+        )
+
+
 @bot.message_handler(commands=["c"])
 async def get_changes(message):
     global base_dir_data
@@ -165,8 +179,9 @@ async def send_welcome(message):
         await bot.reply_to(
             message,
             """
-/l   : Lấy link data
-/c <n>: hiển thị n lần thay đổi dữ liệu gần nhất
+/l      : Lấy link data
+/c <n>  : hiển thị n lần thay đổi dữ liệu gần nhất
+/r      : Run
 """,
         )
     except Exception as e:
